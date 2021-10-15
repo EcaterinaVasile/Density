@@ -1,0 +1,554 @@
+
+---
+title: "Species of fish"
+author: "Vasile Ecaterina & Vasilache Magdalena"
+date: "20 06 2020"
+output: pdf_document
+fig_width: 3
+fig_height: 3
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Introducere
+
+Pescuitul este una dintre activitatile primordiale ale omului. Daca in antichitate a reprezentat un mod de obtinere a hranei, necesara 
+supravietuirii, odata cu trecerea timpului, pescuitul a capatat si statutul de activitate recreationala pentru omul modern.
+Mai mult decat atat, este cunoscut faptul ca pestii reprezinta una dintre cele mai bune surse de hrana pentru om: studii stiintifice
+stau in spatele recomandarilor uleiurilor de peste iar carnea acestora este o importanta sursa de proteine. Astfel, au aparut si crescatoriile
+de peste. De aceea studii asupra vietuitoarelor acvatice au o deosebita importanta in zilele noastre: cunoscand relatiile intre diversele variabile
+care descriu o specie de peste, putem sa facem alegeri optime atunci cand vine vorba de inmultitul speciilor sau pescuit.
+
+Setul de date ales ofera informatii cu privire la masuratorile care pot fi facute asupra mai multor specii de pesti. Contine numere 
+rezonabile de indivizi din sapte specii iar masuratorile inregistreaza greutatea, grosimea, latimea si cele trei lungimi specifice 
+unui peste: lungimea totala, lungimea standard si lungimea la bifurcatie.Vom face o prezentare grafica a setului de date, ilustrand 
+relatii intre variabilele luate in considerare si densitatile acestora. 
+Scopul acestei lucrari este acela de a investiga existenta unei relatii liniare intre doua masuratori: greutatea si lungimea standard, 
+acea lungime care nu ia coada pestelui in considerare si vom oferi o interpretare a rezultatului obtinut. Vom studia intervale
+de incredere(impreuna cu regiunea de incredere) si o analiza de predictie. 
+
+# Vizualizarea datelor.
+```{r include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(purrr)
+library(tidyr)
+library(readr)
+library(tibble)
+library(tidyverse)
+library(magrittr)
+library(caTools)
+library(gridExtra)
+library(ggplot2)
+library(forecast)
+library(tseries)
+library(tidyverse)
+library(rio)
+library(readxl)
+library(ellipse)
+library(car)
+```
+
+
+Citim setul de date:
+
+```{r}
+my.data <- import("C:/Users/Irina/Downloads/Fish.csv")
+```
+
+## Modul de repartitie a grosimii speciilor luate in considerare
+
+```{r}
+ggplot(my.data, aes(x = Height, colour = Species, fill =Species)) +
+  geom_area(stat = "bin",binwidth=1, aes(y = ..density..), alpha = 0.5)
+```
+
+## Modul de repartitie a greutatii speciilor luate in considerare
+
+```{r fig.dim = c(7, 3.5)}
+ ggplot(my.data, aes(x = Weight, colour = Species, fill = Species)) +
+  geom_area(stat = "bin",binwidth=90, aes(y = ..density..), alpha = 0.5)
+```
+
+## Modul de repartitie a latimii speciilor luate in considerare
+
+```{r fig.dim = c(7, 3.5)}
+ggplot(my.data, aes(x = Width, colour = Species, fill = Species)) +
+  geom_area(stat = "bin",binwidth=0.5, aes(y = ..density..), alpha = 0.5)
+```
+
+## Modul de repartitie a lungimii 1 a speciilor luate in considerare
+
+```{r fig.dim = c(7, 3.5)}
+ggplot(my.data, aes(x = Length1, colour = Species, fill = Species)) +
+  geom_area(stat = "bin",binwidth=3, aes(y = ..density..), alpha = 0.5)
+```
+
+## Modul de repartitie a lungimii 2 a speciilor luate in considerare
+
+```{r fig.dim = c(7, 3.5)}
+ggplot(my.data, aes(x = Length2, colour = Species, fill = Species)) +
+  geom_area(stat = "bin",binwidth=3, aes(y = ..density..), alpha = 0.5)
+```
+
+## Modul de repartitie a lungimii 3 a speciilor luate in considerare
+
+```{r fig.dim = c(7, 3.5)}
+ggplot(my.data, aes(x = Length3, colour = Species, fill = Species)) +
+  geom_area(stat = "bin",binwidth=3, aes(y = ..density..), alpha = 0.5)
+```
+
+## Densitatile
+
+```{r fig.dim = c(7, 10)}
+par(mfrow = c(2,3))
+
+hist(my.data$Weight,
+     breaks = 45,
+     probability = TRUE,
+     main = "Graficul densitatii greutatii",
+     cex.main = 0.8,
+     xlab = "Greutatea",
+     ylab = "Densitatea")
+lines(density(my.data$Weight),
+      col = "magenta")
+
+hist(my.data$Height,
+     breaks = 45,
+     probability = TRUE,
+     main = "Graficul densitatii inaltimii",
+     cex.main = 0.8,
+     xlab = "Grosimea",
+     ylab = "Densitatea")
+lines(density(my.data$Height),
+      col = "magenta")
+
+hist(my.data$Width,
+     breaks = 45,
+     probability = TRUE,
+     main = "Graficul densitatii latimii",
+     cex.main = 0.8,
+     xlab = "Latimea",
+     ylab = "Densitatea")
+lines(density(my.data$Width),
+      col = "magenta")
+
+hist(my.data$Length1,
+     breaks = 45,
+     probability = TRUE,
+     main = "Graficul densitatii lungimii 1",
+     cex.main = 0.8,
+     xlab = "Lungimea 1",
+     ylab = "Densitatea")
+lines(density(my.data$Length1),
+      col = "magenta")
+
+hist(my.data$Length2,
+     breaks = 45,
+     probability = TRUE,
+     main = "Graficul densitatii lungimii 2",
+     cex.main = 0.8,
+     xlab = "Lungimea 2",
+     ylab = "Densitatea")
+lines(density(my.data$Length2),
+      col = "magenta")
+
+hist(my.data$Length3,
+     breaks = 45,
+     probability = TRUE,
+     main = "Graficul densitatii lungimii 3",
+     cex.main = 0.8,
+     xlab = "Lungimea 3",
+     ylab = "Densitatea")
+lines(density(my.data$Length3),
+      col = "magenta")
+```
+
+## Densitatile cu ajutorul functiei ggplot
+
+```{r fig.dim = c(7, 4.5)}
+plot1 <- ggplot(my.data, aes(x = Weight)) +
+  geom_density()
+
+plot2 <- ggplot(my.data, aes(x = Height)) +
+  geom_density()
+
+plot3 <- ggplot(my.data, aes(x = Width)) +  
+  geom_density() 
+
+grid.arrange(plot1,plot2,plot3)
+
+plot4 <- ggplot(my.data, aes(x = Length1)) +
+  geom_density()
+
+plot5 <- ggplot(my.data, aes(x = Length2)) +
+  geom_density()
+
+plot6 <- ggplot(my.data, aes(x = Length3)) +
+  geom_density() 
+
+grid.arrange(plot4,plot5,plot6)
+```
+
+## Relatia dintre greutate si latime a speciilor pe care le avem in vedere
+
+```{r fig.dim = c(7, 3.5)}
+plot(my.data$Width, my.data$Weight,
+     xlab = "Latimea ",
+     ylab = " Greutatea",
+     col = "navyblue",
+     bty="n")
+```
+
+## Relatia dintre grosime si latime a speciilor pe care le avem in vedere
+
+```{r fig.dim = c(7, 3.3)}
+plot(my.data$Width, my.data$Height,
+     xlab = "Latimea ",
+     ylab = " Inaltimea",
+     col = "navyblue",
+     bty="n")
+```
+
+## Relatia dintre greutate si lungime a speciilor pe care le avem in vedere
+
+```{r fig.dim = c(7, 3.3)}
+plot(my.data$Height, my.data$Weight,
+     xlab = " Inaltimea",
+     ylab = " Greutatea",
+     col = "navyblue",
+     bty="n")
+```
+
+Pentru urmatoarele grafice ne folosim de scara logaritmica.
+
+```{r fig.dim = c(7, 3.3)}
+plot(log(my.data$Length1), log(my.data$Length2),
+     xlab = " Length1",
+     ylab = " Length2",
+     col = "navyblue",
+     bty="n")
+
+
+plot(log(my.data$Length2), log(my.data$Length3),
+     xlab = " Length2",
+     ylab = " Length3",
+     col = "navyblue",
+     bty="n")
+
+plot(log(my.data$Length3), log(my.data$Length1),
+     xlab = "Length3",
+     ylab = "Length1",
+     col = "navyblue",
+     bty="n")
+```
+
+#Boxplot
+
+```{r fig.dim = c(8, 5)}
+par(mfrow = c(2,3))
+boxplot(my.data$Weight~my.data$Species,xlab="Specii",ylab = "Greutate")
+quantile(my.data$Weight ,probs = c(0, 0.25, 0.5, 0.75, 1))
+
+boxplot(my.data$Height~my.data$Species,xlab="Specii", ylab = "Lungime")
+quantile(my.data$Height ,probs = c(0, 0.25, 0.5, 0.75, 1))
+
+boxplot(my.data$Width~my.data$Species,xlab="Specii", ylab = "Latimea")
+quantile(my.data$Width ,probs = c(0, 0.25, 0.5, 0.75, 1))
+
+boxplot(my.data$Length1~my.data$Species,xlab="Specii", ylab = "Lungimea 1")
+quantile(my.data$Length1 ,probs = c(0, 0.25, 0.5, 0.75, 1))
+
+boxplot(my.data$Length2~my.data$Species,xlab="Specii", ylab = "Lungimea 2")
+quantile(my.data$Length2 ,probs = c(0, 0.25, 0.5, 0.75, 1))
+
+boxplot(my.data$Length3~my.data$Species,xlab="Specii", ylab = "Lungimea 3")
+quantile(my.data$Length3 ,probs = c(0, 0.25, 0.5, 0.75, 1))
+```
+
+Uitandu-ne la boxploturile obtinute, obsevam ca in foarte putine cazuri am putea avea de a face cu o distributie normala, cum ar fi, de exemplu, in cazul primului exemplu, unde cel de-al doilea boxplot pare a pune in evidenta o distributie normala.
+
+## Medii
+
+```{r}
+summary(my.data)
+```
+
+Cu ajutorul functiei summary(), aflam maximul, minimul, media, prima si a treia quartila pentru greutate, latime, grosime, lungime 1, lungime 2 si lungime 3.
+
+## Deviatiile standard
+
+```{r}
+sd(my.data$Weight)
+sd(my.data$Width)
+sd(my.data$Height)
+sd(my.data$Length1)
+sd(my.data$Length2)
+sd(my.data$Length3)
+```
+
+
+# Manipularea datelor. Regresia liniara simpla
+
+##Reprezentarea greutatii in functie de lungime 1
+
+```{r fig.dim = c(7, 3.5)}
+ggplot7 <- ggplot() +
+  geom_line(data = my.data, aes(x =Length1, y =Weight)) +
+  ylab("Greutate") +
+  xlab("Lungime1") +
+  ggtitle("Specii de pesti") 
+grid.arrange(ggplot7, nrow = 1, ncol = 1)
+```
+
+Gasim cea mai mare valoare din coloana Weight, ordonam crescator elementele, apoi extragem ultima observatie, adica observatia cu valoarea cea mai mare.
+
+```{r}
+data2 <- arrange(my.data,Weight,options(max.print = 2000))
+maxim<- slice_tail(data2)$Weight
+```
+Studiem felul in care greutatea influenteaza lungimea 1 a pestilor. Dorim sa aratam
+ca exista o relatie aproximativ liniara intre cele doua componente. 
+Costruim modelul de regresie ce descrie relatia dintre greutate si lungime 1.
+
+## 1.Metoda celor mai mici patrate
+
+```{r}
+beta1 <-  cov(my.data$Weight, my.data$Length1)/var(my.data$Weight)
+cat("beta1 = ", beta1, "\n")
+beta0 <- mean(my.data$Length1) - beta1*mean(my.data$Weight)
+cat("beta0 = ", beta0)
+```
+
+**Reprezentam datele si dreapta de regresie**
+
+```{r fig.dim = c(7, 4.3)}
+eq1 <- function(x){beta0+beta1*x}
+
+par(mfrow = c(1,1))
+
+plot(my.data$Weight,my.data$Length1,xlab = "Greutate",ylab = "Lungime 1",
+     main="Dreapta de regresie cu RSS",col.main="red",col="blue")
+lines(eq1(1:maxim), type = 'l',col="red")
+```
+
+**Intervale de incredere**
+
+```{r}
+alpha <- 5/100
+n <-  length(my.data$Length1)
+e_est <- my.data$Length1 - (beta0+beta1*my.data$Weight)
+rss <-  sum(e_est^2)
+sigma_est <-  sqrt(rss/(n-2))
+
+s_beta0 <-  sqrt(sigma_est^2*(1/n+mean(my.data$Weight)^2/((n-1)*var(my.data$Weight))))
+s_beta1 <-  sqrt(sigma_est^2/((n-1)*var(my.data$Weight)))
+lw_beta0 <-  beta0 - qt(1-alpha/2, n-2)*s_beta0
+up_beta0 <-  beta0 + qt(1-alpha/2, n-2)*s_beta0 
+
+cat("Intervalul de incredere pentru beta0 este (", lw_beta0, ", ", up_beta0, ")\n")
+
+lw_beta1 = beta1 - qt(1-alpha/2, n-2)*s_beta1
+up_beta1 = beta1 + qt(1-alpha/2, n-2)*s_beta1
+
+cat("Intervalul de incredere pentru pentru beta1 este (", lw_beta1, ", ", up_beta1, ")")
+```
+   
+Se poate observa ca cele doua intervale nu sunt de lungimi mari, ceea ce indica faptul ca exista o relatie intre lungimea si greutatea observatiilor.
+
+## 2.Cu ajutorul functiilor predefinite din R
+
+```{r}
+model<- lm(Length1 ~ Weight , data=my.data)
+print(model)
+b0 <- model$coefficients[1]
+b1 <- model$coefficients[2]
+eq = function(x){b0 + b1*x}
+```
+
+**Reprezentam datele si dreapta de regresie**
+
+```{r fig.dim = c(7, 5)}
+par(mfrow = c(1,1))
+plot(my.data$Weight,my.data$Length1,col="blue",xlab = "Greutate",ylab = "Inaltime",
+     main="Dreapta de regresie",col.main="red")
+lines(eq(1:maxim), type = 'l',col="red") 
+```
+
+**Intervale de incredere**
+
+```{r fig.dim = c(7, 6)}
+confint(model)
+par(mfrow = c(2,2))
+plot(model)
+```
+
+**Reprezentam regiunea de incredere si intervalele de incredere**
+
+```{r}
+par(bty = "n")
+par(mfrow = c(1,1))
+confidenceEllipse(model,
+                  xlab = "beta0",
+                  ylab = "beta1",
+                  col = "red")
+points(coef(model)[1], coef(model)[2],
+       pch = 18, col = "blue",
+       cex = 2)
+abline(v = confint(model)[1,], lty = 2)
+abline(h = confint(model)[2,], lty = 2)
+```
+
+Observam ca dreapta de regresie rezultata coincide la ambele metode. Deci, exista o dependenta liniara intre greutate si lungime 1.
+Se observa ca in regiunea de incredere, punctul (beta0, beta1), calculat atat cu ajutorul formulelor, cat si extras din lista oferita de modelul de regresie, se afla in interiorul ei, ceea ce denota faptul ca exista o corelatie intre cei doi parametri.
+
+# Predictie
+
+## 1. Predictie cu ajutorul formulei
+
+Scot coeficientii din lista modelului si aplic formula coef1 + coef2*(o valoare de pe axa Ox). Astfel, pot sa iau orice valoare a variabilei Weight.
+
+```{r}
+point_1 <- (coef(model)[1]+coef(model)[2]*250)
+plot(my.data$Weight,my.data$Length1,col="darksalmon",xlab = "Greutate",ylab="Lungime1",
+     main="Puncte de predictie",col.main="coral4")
+
+
+for (i in 0:1500){
+  point_2 <- coef(model)[1]+coef(model)[2]*i
+  point_2
+  points(i, point_2, col = "coral4", 
+         type = "p",
+         pch = 18,
+         cex = 0.5)
+  i <-  i + 1
+}
+```
+
+Se poate observa ca point_1 se regaseste in multimea de puncte de pe grafic.
+
+
+## 2. Predictie cu ajutorul functiei predefinite predict()
+
+```{r}
+my.data1 <-  data.frame(Weight = 100)
+my.data2 <-  data.frame(Weight = c(100, 120, 140))
+predict(model, newdata = my.data1)
+```
+
+**Predictie pentru valoarea raspunsului mediu**
+
+```{r}
+predict(model, newdata = my.data1, interval = "confidence")
+
+predict(model, newdata = my.data2, interval = "confidence")
+```
+
+**Predictie asupra observatiilor viitoare**
+
+```{r}
+predict(model, newdata = my.data1, interval = "prediction")
+
+predict(model, newdata = my.data2, interval = "prediction")
+
+
+x0 = c(100, 700)
+p.conf = predict(model, data.frame(Weight = x0), se = T, interval = "confidence")
+p.pred = predict(model, data.frame(Weight = x0), se = T, interval = "prediction")
+```
+
+**Diagrama de imprastiere**
+
+```{r}
+plot(my.data$Weight, my.data$Length1,
+     col = "darkolivegreen4", pch = 10,
+     xlab = "Greutate",
+     ylab = "Lungime1")
+abline(model$coefficients, col = "darkolivegreen2", lwd = 2)
+
+#Intervale de predictie 
+
+segments(x0 = x0, y0 = p.pred$fit[,2], x1 = x0, y1 = p.pred$fit[,3],
+         col = "darkorange", lty = 2, lwd = 2)
+segments(x0 = x0-2.5, y0 = p.pred$fit[,2], x1 = x0+2.5, y1 = p.pred$fit[,2],
+         col = "darkorange", lty = 2, lwd = 2)
+segments(x0 = x0-2.5, y0 = p.pred$fit[,3], x1 = x0+2.5, y1 = p.pred$fit[,3],
+         col = "darkorange", lty = 2, lwd = 2)
+
+#Valoarea prezisa
+
+points(x0, p.conf$fit[,1],
+       col = "goldenrod1",
+       pch = 10)
+
+legend("topleft",
+       legend = c("Dreapta de regresie",
+                  "interval de incredere",
+                  "interval de predictie"),
+       lwd = c(2, 2, 2),
+       col = c("darkolivegreen2", "darkolivegreen2", "goldenrod1"),
+       lty = c(1, 2, 2),
+       bty = "n")
+```
+
+## 3. Intervale de predictie date de inegalitatea lui Bonferroni
+
+```{r fig.dim = c(7,5)}
+g = seq(0,1000,0.5)
+p = predict(model, data.frame(Weight = g), se = T, interval = "confidence")
+matplot(g, p$fit, type = "l", lty = c(1,2,2),
+        lwd = c(2,1,1),
+        col = c("darkorchid1", "darksalmon", "darksalmon"),
+        xlab = "Greutate",
+        ylab = "Lungime",
+        bty = "n")
+
+points(my.data$Weight, my.data$Length1,
+       col = "darkseagreen", pch = 20)
+abline(v = mean(my.data$Weight), lty = 3, col = "darkseagreen3")
+
+
+M = sqrt(2*qf(1-alpha, 2, n-2))
+s_xx = (n-1)*var(my.data$Weight)
+lw_scheffe = b0 + b1*g - M*sigma_est*sqrt(1/n+(g-mean(my.data$Weight))^2/s_xx)
+up_scheffe = b0 + b1*g + M*sigma_est*sqrt(1/n+(g-mean(my.data$Weight))^2/s_xx)
+lines(g, lw_scheffe,
+      lty = 4,
+      lwd = 2,
+      col = "deepskyblue4")
+lines(g, up_scheffe,
+      lty = 4,
+      lwd = 2,
+      col = "deepskyblue4")
+
+
+x0 = runif(6, min = 10, max = 290)
+m = length(x0)
+t_bonf = qt(1-alpha/(2*m), n-2)
+lw_bonf = b0 + b1*x0 - t_bonf*sigma_est*sqrt(1/n+(x0-mean(my.data$Weight))^2/s_xx)
+up_bonf = b0 + b1*x0 + t_bonf*sigma_est*sqrt(1/n+(x0-mean(my.data$Weight))^2/s_xx)
+segments(x0 = x0, y0 = lw_bonf, x1 = x0, y1 = up_bonf,
+         col = "coral3", lty = 1, lwd = 2)
+segments(x0 = x0-1.25, y0 = lw_bonf, x1 = x0+1.25, y1 = lw_bonf,
+         col = "coral3", lty = 1, lwd = 2)
+segments(x0 = x0-1.25, y0 = up_bonf, x1 = x0+1.25, y1 = up_bonf,
+         col = "coral3", lty = 1, lwd = 2)
+legend("topleft", legend = c("Dreapta de regresie", "95% t interval",
+                             "95% Scheffe interval",
+                             paste0(m, " intervale Bonferroni (95%)")),
+       lwd = c(2, 2, 2, 2),
+       col = c("darkorchid1", "darksalmon", "deepskyblue4", "coral3"),
+       lty = c(1, 2, 4, 1),
+       bty = "n")
+
+```
+
+
+## Concluzii 
+
+Avand in vedere ca modelul de regresie pe care l-am realizat s-a dovedit a fi unul liniar, putem concluziona ca exista o relatie intre greutatea si lungimea standard a unui peste, ceea ca pare si firesc datorita faptului ca aceasta lungime nu ia coada in considerare, a carei greutate poate fi neglijata, contribuind numai la lungimea totala.
+
+## Bibliografie 
+
+* Curs si laborator "Introducere in modele de regresie", anul III, semestrul II.
+* Geogre G. Roussas, "A course in mathematical statistics", second edition, 1997.
